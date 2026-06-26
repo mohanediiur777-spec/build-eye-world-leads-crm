@@ -3,37 +3,34 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { SLABadge } from './sla-badge';
-import { mockLeads } from '@/lib/mock-data';
+import { useLeads, useCallLogs } from '@/hooks/useGoogleSheetsData';
+import { logCall, updateLeadSLA } from '@/lib/googleSheets';
 import { Phone, Clock, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 
 export function CallCenterAgent() {
-  const [leads, setLeads] = useState(mockLeads);
+  const { leads = [] } = useLeads();
+  const { callLogs = [], mutate: mutateCallLogs } = useCallLogs();
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
-  const [selectedOutcome, setSelectedOutcome] = useState<string | null>(null);
+  const [isLogging, setIsLogging] = useState<string | null>(null);
 
-  const handleLogCall = (leadId: string, outcome: string) => {
-    setLeads(leads.map(lead => {
-      if (lead.id === leadId) {
-        return {
-          ...lead,
-          lastContactAt: new Date(),
-          callHistory: [
-            ...lead.callHistory,
-            {
-              id: `call_${Date.now()}`,
-              leadId,
-              date: new Date(),
-              duration: Math.floor(Math.random() * 20) + 5,
-              notes: 'Call logged from agent dashboard',
-              outcome: outcome as any,
-              agentName: 'Current Agent',
-            },
-          ],
-        };
-      }
-      return lead;
-    }));
-    setSelectedOutcome(null);
+  const handleLogCall = async (leadId: string, outcome: string) => {
+    setIsLogging(leadId);
+    try {
+      await logCall({
+        leadId,
+        agentName: 'Current Agent',
+        callDate: new Date().toISOString(),
+        duration: String(Math.floor(Math.random() * 20) + 5),
+        outcome,
+        notes: 'Call logged from agent dashboard',
+        recordingUrl: '',
+      });
+      mutateCallLogs();
+    } catch (error) {
+      console.error('[v0] Error logging call:', error);
+    } finally {
+      setIsLogging(null);
+    }
   };
 
   const criticalLeads = leads.filter(l => l.slaStatus === 'critical' || l.slaStatus === 'warning');
@@ -131,24 +128,27 @@ export function CallCenterAgent() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => handleLogCall(lead.id, 'scheduled')}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded font-medium transition-colors"
+                      disabled={isLogging === lead.id}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded font-medium transition-colors disabled:opacity-50"
                     >
                       <CheckCircle size={16} />
-                      Scheduled
+                      {isLogging === lead.id ? 'Logging...' : 'Scheduled'}
                     </button>
                     <button
                       onClick={() => handleLogCall(lead.id, 'interested')}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded font-medium transition-colors"
+                      disabled={isLogging === lead.id}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded font-medium transition-colors disabled:opacity-50"
                     >
                       <Phone size={16} />
-                      Interested
+                      {isLogging === lead.id ? 'Logging...' : 'Interested'}
                     </button>
                     <button
                       onClick={() => handleLogCall(lead.id, 'not-interested')}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm rounded font-medium transition-colors"
+                      disabled={isLogging === lead.id}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm rounded font-medium transition-colors disabled:opacity-50"
                     >
                       <XCircle size={16} />
-                      Not Interested
+                      {isLogging === lead.id ? 'Logging...' : 'Not Interested'}
                     </button>
                   </div>
                 </div>
