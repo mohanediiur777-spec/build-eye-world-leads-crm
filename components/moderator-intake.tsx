@@ -63,7 +63,7 @@ export function ModeratorIntake() {
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
-          className="bg-primary hover:bg-primary-dark text-white gap-2"
+          className="bg-slate-100 hover:bg-slate-200 text-[#030423] gap-2 border border-slate-300 shadow-sm"
         >
           <Plus size={18} />
           Add Lead
