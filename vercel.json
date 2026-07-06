@@ -1,9 +1,5 @@
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "framework": "nextjs",
-  "installCommand": "pnpm install",
-  "env": {
-    "NEXT_PUBLIC_GOOGLE_APPS_SCRIPT_URL": "@google_apps_script_url"
-  }
+  "framework": "nextjs"
 }
